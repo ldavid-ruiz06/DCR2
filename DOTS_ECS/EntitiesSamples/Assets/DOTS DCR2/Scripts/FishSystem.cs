@@ -529,14 +529,7 @@ namespace DCR2
 
             public void Execute ()
             {
-                                //Debug.Log("newCentroid: " + newCentroid[0]);
-                //Debug.LogFormat("newCentroid: {0}, fishCount: {1}", newCentroid[0], fishCount);
-                //Debug.Log(FixedString.Format("fishCountPerSchool {1}: {0}", fishCountPerSchool[schoolID], schoolID));
-                //Debug.Log(FixedString.Format("fishCountPerSchool {1}: {0}", fishCountPerSchool[schoolID], schoolID));
                 newCentroid[schoolID] = newCentroid[schoolID] / (float) fishCountPerSchool[schoolID];
-            
-
-
             }
         }
         //TODO :: Put new Centroid Job
