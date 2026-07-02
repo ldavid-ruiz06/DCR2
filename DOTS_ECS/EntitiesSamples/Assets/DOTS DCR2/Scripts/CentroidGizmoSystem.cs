@@ -19,7 +19,7 @@ namespace DCR2
     // there are no entities found in the EntityQueries that you do
     //  Basically, this doens't run OnUpdate until there are entities that match the quesries done in this system (Until we've defined our entity spawner)
     [RequireMatchingQueriesForUpdate]
-    //[UpdateAfter(typeof(FishSystem))]
+    [UpdateAfter(typeof(FishSystem))]
     [BurstCompile]
     public partial struct CentroidGizmoSystem : ISystem
     {
@@ -112,9 +112,10 @@ namespace DCR2
                     int x = uniqueFishID[g];
                     //Debug.Log(FixedString.Format("uniqueFish ID: {0}", x));
                     var centroidVal = state.EntityManager.GetComponentData<DynamicSchool>(entityArray[x]).centroid;
+                    Debug.Log(FixedString.Format("{0}, {1}, {2}", centroidVal.x, centroidVal.y, centroidVal.z));
                     var localToWorld = new LocalToWorld
                             {
-                                Value = float4x4.TRS(centroidVal, quaternion.LookRotationSafe(new float3(0f,0f,0f), math.up()), new float3(10.0f, 10.0f, 10.0f))
+                                Value = float4x4.TRS(centroidVal, quaternion.LookRotationSafe(new float3(0f,0f,0f), math.up()), new float3(1.0f, 1.0f, 1.0f))
                                // Value = float4x4.TRS(centroidVal, quaternion.LookRotationSafe(new float3(0f,0f,0f), math.up()), new float3(10.0f, 10.0f, 10.0f))
                             };
                     localToWorldLookup[centroidEntityArray[g]] = localToWorld;

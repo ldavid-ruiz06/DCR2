@@ -520,34 +520,21 @@ namespace DCR2
         }
 
         [BurstCompile]
-        partial struct CalculateCentroidMeanJob : IJobEntity
+        partial struct CalculateCentroidMeanJob : IJob
         {
             public NativeArray<float3> newCentroid;
             [ReadOnly] public int fishCount;
             [ReadOnly] public int schoolID;
             [ReadOnly] public NativeArray<int> fishCountPerSchool;
-            public float3 schoolCentroid;
 
-            void Execute ()
+            public void Execute ()
             {
-                // calculation mean by steps cuz theres something fishy going on
-                float x = newCentroid[schoolID].x;
-                float y = newCentroid[schoolID].y;
-                float z = newCentroid[schoolID].z;
-
-                x = x / (float) fishCountPerSchool[schoolID];
-                y = y / (float) fishCountPerSchool[schoolID];
-                z = z / (float) fishCountPerSchool[schoolID];
-
-                Debug.Log(FixedString.Format("Manual Mean: ({0}, {1}, {2})", x, y, z));
-
-
-                //Debug.Log("newCentroid: " + newCentroid[0]);
+                                //Debug.Log("newCentroid: " + newCentroid[0]);
                 //Debug.LogFormat("newCentroid: {0}, fishCount: {1}", newCentroid[0], fishCount);
                 //Debug.Log(FixedString.Format("fishCountPerSchool {1}: {0}", fishCountPerSchool[schoolID], schoolID));
                 //Debug.Log(FixedString.Format("fishCountPerSchool {1}: {0}", fishCountPerSchool[schoolID], schoolID));
-                newCentroid[schoolID] = newCentroid[schoolID]/ (float)fishCountPerSchool[schoolID];
-                schoolCentroid = newCentroid[schoolID];
+                newCentroid[schoolID] = newCentroid[schoolID] / (float) fishCountPerSchool[schoolID];
+            
 
 
             }
@@ -558,6 +545,7 @@ namespace DCR2
         {
             [ReadOnly] public NativeArray<float3> newCentroid;
             [ReadOnly] public int schoolID;
+            public float3 schoolCentroid;
 
             void Execute(ref DynamicSchool dynamicSchool)
             {

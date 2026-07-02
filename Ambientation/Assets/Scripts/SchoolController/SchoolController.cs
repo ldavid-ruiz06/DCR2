@@ -253,6 +253,7 @@ public class SchoolController : MonoBehaviour
     {
         // Actualizar el centroide del cardumen
         centroid = GetSchoolCentroid();
+        Debug.Log(centroid);
 
         // Actualizar la poblacion para verla en el inspector
         currentPopulation = fishList.Count;
@@ -1017,9 +1018,12 @@ public class SchoolController : MonoBehaviour
 
         Vector3 centroid = Vector3.zero;
 
+        int i = 0;
         foreach (FishController fish in fishList)
         {
+            Debug.Log("fish " + i + ": " + fish.transform.position);
             centroid += fish.transform.position;
+            i++;
         }
 
         return centroid / fishList.Count;
