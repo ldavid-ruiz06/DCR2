@@ -515,7 +515,7 @@ namespace DCR2
                 //Debug.Log(newCentroid[0] + localToWorld.Position);
                 newCentroid[schoolID] = newCentroid[schoolID] + localToWorld.Position;
                 fishCountPerSchool[schoolID]++;
-                //Debug.Log(FixedString.Format("Position: ({0}, {1}, {2})", (float)localToWorld.Position.x, (float)localToWorld.Position.y, (float)localToWorld.Position.z));
+                Debug.Log(FixedString.Format("Position: ({0}, {1}, {2})", (float)localToWorld.Position.x, (float)localToWorld.Position.y, (float)localToWorld.Position.z));
             }
         }
 

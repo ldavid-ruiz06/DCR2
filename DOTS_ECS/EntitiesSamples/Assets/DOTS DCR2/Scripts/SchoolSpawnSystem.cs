@@ -142,10 +142,13 @@ namespace DCR2
 
                 //puts the Deletes the the entity command into a queue
                 ecb.DestroyEntity(entity);
+                // instead of deleting it, just disable it
+                //ecb.AddComponent<Disabled>(entity);
             }
 
             //Deletes the entity ID's after the for loop is done
             ecb.Playback(state.EntityManager);
+            
         }
     }
     

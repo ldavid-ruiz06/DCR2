@@ -94,7 +94,7 @@ namespace DCR2
                 foreach (var entity in fishEntities)
                 {
                     SemiStaticSchool school = state.EntityManager.GetSharedComponentManaged<SemiStaticSchool>(entity);
-                    Debug.Log(FixedString.Format("Entity {1} schoolID: {0}", school.schoolID, i));
+                    //Debug.Log(FixedString.Format("Entity {1} schoolID: {0}", school.schoolID, i));
                     if (id != school.schoolID)
                     {
                         id = school.schoolID;
@@ -112,7 +112,7 @@ namespace DCR2
                     int x = uniqueFishID[g];
                     //Debug.Log(FixedString.Format("uniqueFish ID: {0}", x));
                     var centroidVal = state.EntityManager.GetComponentData<DynamicSchool>(entityArray[x]).centroid;
-                    Debug.Log(FixedString.Format("{0}, {1}, {2}", centroidVal.x, centroidVal.y, centroidVal.z));
+                    //Debug.Log(FixedString.Format("{0}, {1}, {2}", centroidVal.x, centroidVal.y, centroidVal.z));
                     var localToWorld = new LocalToWorld
                             {
                                 Value = float4x4.TRS(centroidVal, quaternion.LookRotationSafe(new float3(0f,0f,0f), math.up()), new float3(1.0f, 1.0f, 1.0f))
