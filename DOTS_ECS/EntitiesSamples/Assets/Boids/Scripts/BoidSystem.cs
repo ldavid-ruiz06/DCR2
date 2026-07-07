@@ -401,7 +401,7 @@ namespace Boids
             {
                 int entityIndexInQuery = ChunkBaseEntityIndices[chunkIndexInQuery] + entityIndexInChunk;
                 // temporarily storing the values for code readability
-                var forward                           = localToWorld.Forward;
+                float3 forward                        = math.normalizesafe(localToWorld.Value.c2.xyz);
                 var currentPosition                   = localToWorld.Position;
                 var cellIndex                         = CellIndices[entityIndexInQuery];
                 var neighborCount                     = CellCount[cellIndex];
@@ -412,6 +412,14 @@ namespace Boids
                 var nearestTargetPositionIndex        = CellTargetPositionIndex[cellIndex];
                 var nearestObstaclePosition           = ObstaclePositions[nearestObstaclePositionIndex];
                 var nearestTargetPosition             = TargetPositions[nearestTargetPositionIndex];
+
+
+                // Extract baked scale once
+                float4x4 existing = localToWorld.Value;
+                float3 bakedScale = new float3(
+                    math.length(existing.c0.xyz),
+                    math.length(existing.c1.xyz),
+                    math.length(existing.c2.xyz));
 
                 // Setting up the directions for the three main biocrowds influencing directions adjusted based
                 // on the predefined weights:
@@ -460,7 +468,7 @@ namespace Boids
                         // TODO: precalc speed*dt
                         new float3(localToWorld.Position + (nextHeading * MoveDistance)),
                         quaternion.LookRotationSafe(nextHeading, math.up()),
-                        new float3(1.0f, 1.0f, 1.0f))
+                        bakedScale)
                 };
             }
         }

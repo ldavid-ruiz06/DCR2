@@ -122,9 +122,22 @@ namespace Boids
             var random = new Unity.Mathematics.Random(((uint)(entity.Index + i + 1) * 0x9F6ABC1));
             var dir = math.normalizesafe(random.NextFloat3() - new float3(0.5f, 0.5f, 0.5f));
             var pos = Center + (dir * Radius);
+
+
+             // Read the existing baked matrix to extract its scale
+            float4x4 existing = LocalToWorldFromEntity[entity].Value;
+            float3 bakedScale = new float3(
+                math.length(existing.c0.xyz),
+                math.length(existing.c1.xyz),
+                math.length(existing.c2.xyz));
+
+
+
+
+
             var localToWorld = new LocalToWorld
             {
-                Value = float4x4.TRS(pos, quaternion.LookRotationSafe(dir, math.up()), new float3(1.0f, 1.0f, 1.0f))
+                Value = float4x4.TRS(pos, quaternion.LookRotationSafe(dir, math.up()), bakedScale)
             };
             LocalToWorldFromEntity[entity] = localToWorld;
         }
