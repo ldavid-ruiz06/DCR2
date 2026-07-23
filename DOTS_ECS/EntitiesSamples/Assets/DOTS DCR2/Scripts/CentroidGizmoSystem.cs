@@ -30,11 +30,19 @@ namespace DCR2
             {
                 // get query of gizmo to have each centroidID
                 var gizmoQuery = SystemAPI.QueryBuilder().WithAll<centroidGizmo>().Build();
+                Debug.Log(FixedString.Format("{0}", gizmoQuery.CalculateEntityCount()));
+                
                 
 
                 // query and array of fish entities
                 var fishQuery = SystemAPI.QueryBuilder().WithAll<DynamicSchool>().Build();
                 NativeArray<Entity> entityArray = fishQuery.ToEntityArray(Allocator.TempJob);
+
+                // quick return if there are no fish
+                if (fishQuery.CalculateEntityCount() == 0)
+                {
+                    return;
+                }
                 
                 //var centroidVal = state.EntityManager.GetComponentData<DynamicSchool>(entityArray[0]).centroid;
 
@@ -48,41 +56,7 @@ namespace DCR2
                 //Debug.Log("In Onpudate");
                 NativeArray<Entity> centroidEntityArray = centroidQuery.ToEntityArray(Allocator.TempJob);
 
-                //localToWorldLookup[entityArray[0]] = localToWorld;
-                //Debug.Log(localToWorldLookup[entityArray[0]].Position);
-                //?? its spawning the entity but I cant see it???
-                //Debug.Log("Centroid location calc");
-                //Debug.Log(centroidQuery.CalculateEntityCount());
-
-
-
-                // this code didnt work, ignore
-                // check that each gizmo is following a fish of a different school
-                // var world = state.WorldUnmanaged;
-                // int centroidCount = centroidQuery.CalculateEntityCount();
-                // NativeArray<int> uniqueFishID = CollectionHelper.CreateNativeArray<int, RewindableAllocator>(centroidCount, ref world.UpdateAllocator);
-                // state.EntityManager.GetAllUniqueSharedComponents(out NativeList<SemiStaticSchool> uniqueFishComponents, world.UpdateAllocator.ToAllocator);
-                // int id = 0;
-                // int i = 0;
-                // Debug.Log(FixedString.Format("Centroid count: {0}", centroidCount));
-                // Debug.Log(FixedString.Format("uniqueFishComponents.Length: {0}", uniqueFishComponents.Length));
-                // foreach (var fishSettings in uniqueFishComponents)
-                // {
-                //     int schoolID = fishSettings.schoolID;
-                //     Debug.Log(FixedString.Format("Index: {1} SchoolID: {0}", schoolID, i));
-                //     if (id == schoolID)
-                //     {
-                //         uniqueFishID[id] = i;
-                //         id++;
-                //         //if (id == centroidCount) break;
-                //     }
-                //     i++;
-                // }
-
-                // for(i = 0; i < centroidCount; i++)
-                // {
-                //     Debug.Log(FixedString.Format("{0}", uniqueFishID[i]));
-                // }
+                
 
                 // attempt 2 of getting id of fish in different schools
                 var world = state.WorldUnmanaged;

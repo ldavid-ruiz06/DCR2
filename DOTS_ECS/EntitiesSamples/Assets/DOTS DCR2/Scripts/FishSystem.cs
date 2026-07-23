@@ -515,7 +515,7 @@ namespace DCR2
                 //Debug.Log(newCentroid[0] + localToWorld.Position);
                 newCentroid[schoolID] = newCentroid[schoolID] + localToWorld.Position;
                 fishCountPerSchool[schoolID]++;
-                Debug.Log(FixedString.Format("Position: ({0}, {1}, {2})", (float)localToWorld.Position.x, (float)localToWorld.Position.y, (float)localToWorld.Position.z));
+                //Debug.Log(FixedString.Format("Position: ({0}, {1}, {2})", (float)localToWorld.Position.x, (float)localToWorld.Position.y, (float)localToWorld.Position.z));
             }
         }
 
@@ -538,12 +538,11 @@ namespace DCR2
         {
             [ReadOnly] public NativeArray<float3> newCentroid;
             [ReadOnly] public int schoolID;
-            public float3 schoolCentroid;
 
             void Execute(ref DynamicSchool dynamicSchool)
             {
                 dynamicSchool.centroid = newCentroid[schoolID];
-                Debug.Log(FixedString.Format("Centroid: ({0}, {1}, {2})", dynamicSchool.centroid.x, dynamicSchool.centroid.y, dynamicSchool.centroid.z));
+                //Debug.Log(FixedString.Format("Centroid: ({0}, {1}, {2})", dynamicSchool.centroid.x, dynamicSchool.centroid.y, dynamicSchool.centroid.z));
             }
         }
 

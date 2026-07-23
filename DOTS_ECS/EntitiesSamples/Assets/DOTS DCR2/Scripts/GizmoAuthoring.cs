@@ -2,6 +2,7 @@ using System;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace DCR2
 {
@@ -9,7 +10,9 @@ namespace DCR2
     {
         public GameObject centroidPrefab;
         public int showCentroid;
+        public Color centroidColor = Color.white;
         public int centroidID;
+        public int test_p;
         class Baker : Baker<GizmoAuthoring>
         {
             // Function to bake the entity that contains the BoidSchool component
@@ -23,6 +26,11 @@ namespace DCR2
                     AddComponent(entity, new centroidGizmo
                     {
                         centroidPrefab = GetEntity(authoring.centroidPrefab, TransformUsageFlags.Dynamic),
+                        test = authoring.test_p,
+                        centroidColor = new float4(authoring.centroidColor.r,
+                                                    authoring.centroidColor.g,
+                                                    authoring.centroidColor.b,
+                                                    authoring.centroidColor.a)
                     });
                 }
             }
@@ -40,7 +48,9 @@ namespace DCR2
     public struct centroidGizmo : IComponentData
     {
         public Entity centroidPrefab;
+        public float4 centroidColor;
         public int centroidID;
+        public int test;
     }
 }
 

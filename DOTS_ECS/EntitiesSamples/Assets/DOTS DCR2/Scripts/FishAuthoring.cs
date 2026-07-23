@@ -93,8 +93,6 @@ namespace DCR2
     public struct DynamicSchool : IComponentData
     {
         public Vector3 centroid;
-        public Vector3 schoolCentroid;
-
     }
 
     //Stores data that each fish uses and changes individually

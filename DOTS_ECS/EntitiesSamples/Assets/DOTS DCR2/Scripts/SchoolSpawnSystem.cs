@@ -35,8 +35,17 @@ namespace DCR2
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             var world = state.World.Unmanaged;
             var testSpawnComponents = SystemAPI.GetComponentLookup<TestSpawn>();
-
             var centroidSpawnComponents = SystemAPI.GetComponentLookup<centroidGizmo>();
+            
+            // NEW: bail out safely if the manager singleton doesn't exist yet
+            // (e.g. SchoolManagerSystem hasn't run OnCreate before this system this frame)
+            if (!SystemAPI.HasSingleton<SchoolManagerSingleton>())
+            {
+                Debug.Log("Error: Singleton not found");
+                return;
+            }
+            var managerEntity = SystemAPI.GetSingletonEntity<SchoolManagerSingleton>();
+            var manager = SystemAPI.GetComponentRW<SchoolManagerSingleton>(managerEntity);
 
             //Testing
             //var gizmoComponents = SystemAPI.GetComponentLookup<Gizmo>();
@@ -89,15 +98,17 @@ namespace DCR2
                     scale,
                     school.ValueRO.schoolPrefab);
                 */
-
+                
+                // spawn the centroid
                 var centroidQuery = SystemAPI.QueryBuilder().WithAll<centroidGizmo>().WithAll<LocalToWorld>().Build();
                 if (centroidQuery.CalculateEntityCount() > 0)
                 {
-                    Debug.Log("Instantiate Gizmo");
+                    // Debug.Log("Instantiate Gizmo");
                     NativeArray<Entity> centroidEntityArray = centroidQuery.ToEntityArray(Allocator.TempJob);
 
                     state.EntityManager.Instantiate(centroidSpawnComponents[centroidEntityArray[0]].centroidPrefab);
-                    Debug.Log("Instantiate Gizmo2");
+                    var centroidData = centroidSpawnComponents[centroidEntityArray[0]];
+
                 }
                 
                 //CreateNativeArray<T>(NativeArray<T> array, AllocatorManager.AllocatorHandle allocator)
@@ -111,6 +122,7 @@ namespace DCR2
                 var schoolEntities =
                     CollectionHelper.CreateNativeArray<Entity, RewindableAllocator>(school.ValueRO.spawnCount,
                         ref world.UpdateAllocator);
+                
 
                 //Creates clones of the boidSchool Prefabs and stores them into the boidEntities array
                 //  Note: boidSchool has prefabs for the fish that it spawns, the prefabs are of boids type
@@ -124,6 +136,10 @@ namespace DCR2
                     Entities = schoolEntities,
                     Center = schoolLocalToWorld.ValueRO.Position,
                     Radius = school.ValueRO.spawnRadius,
+                    schoolID = school.ValueRO.schoolID,
+                    
+                    
+
                    // CentroidVector = 0
                 };
 
@@ -139,6 +155,33 @@ namespace DCR2
                 
                 //state.Dependency.Complete() :: waits for all jobs to complete in order to go to th next line
                 state.Dependency.Complete();
+
+                // register the newly spawned fish into the school record so we can keep track
+                int schoolID = school.ValueRO.schoolID; // adjust field name if different on your SchoolSpawn struct
+
+                // Create the persistent school-data entity (same pattern as SchoolManagerSystem.SplitFishIntoNewSchool)
+                var schoolDataEntity = ecb.CreateEntity();
+                ecb.AddComponent(schoolDataEntity, new SchoolRecord
+                {
+                    schoolID = schoolID,
+                    centroid = schoolLocalToWorld.ValueRO.Position, // initial guess; FishSystem will correct it next frame
+                    memberCount = school.ValueRO.spawnCount
+                });
+
+                // Fill its member buffer with every fish we just spawned
+                var memberBuffer = ecb.AddBuffer<SchoolMemberElement>(schoolDataEntity);
+                for (int i = 0; i < schoolEntities.Length; i++)
+                {
+                    memberBuffer.Add(new SchoolMemberElement { FishEntity = schoolEntities[i] });
+                }
+
+                // Keep the manager singleton's bookkeeping in sync, and make sure
+                // future runtime-created schools (from SchoolManagerSystem) never reuse this ID.
+                manager.ValueRW.schoolCount++;
+                if (schoolID >= manager.ValueRW.nextSchoolID)
+                {
+                    manager.ValueRW.nextSchoolID = schoolID + 1;
+                }
 
                 //puts the Deletes the the entity command into a queue
                 ecb.DestroyEntity(entity);
@@ -169,6 +212,8 @@ namespace DCR2
         public NativeArray<Entity> Entities;
         public float3 Center;
         public float Radius;
+        public int schoolID;
+        
         
         
 
@@ -192,6 +237,12 @@ namespace DCR2
             };
             LocalToWorldFromEntity[entity] = localToWorld;
             //CentroidVector += localToWorld.Position;
+
+
+            
+            // {
+                
+            // }
         }
         
     }
