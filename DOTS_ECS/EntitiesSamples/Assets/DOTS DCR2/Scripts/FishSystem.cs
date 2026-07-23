@@ -24,19 +24,19 @@ namespace DCR2
 
     public partial struct FishSystem : ISystem
     {
-        // vars
-        EntityQuery schoolQuery;
-        int schoolCount;
-        NativeArray<Entity> schoolArray;
-        // public bool schoolInstatiated = false;
+        // // vars
+        // EntityQuery schoolQuery;
+        // int schoolCount;
+        // NativeArray<Entity> schoolArray;
+        // // public bool schoolInstatiated = false;
         
         
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            //schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolSpawn>().Build();
-            schoolCount = 0;
-        }
+        // [BurstCompile]
+        // public void OnCreate(ref SystemState state)
+        // {
+        //     //schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolSpawn>().Build();
+        //     schoolCount = 0;
+        // }
 
         public void OnUpdate(ref SystemState state)
         {
@@ -47,12 +47,14 @@ namespace DCR2
             var world = state.WorldUnmanaged;
 
             // creating query of schools to use for array of centroids
-            if (schoolCount == 0)
-            {
-                schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolSpawn>().Build();
-                schoolCount = schoolQuery.CalculateEntityCount();
-                schoolArray = schoolQuery.ToEntityArray(Allocator.Temp);
-            }
+            var schoolManager = SystemAPI.GetSingleton<SchoolManagerSingleton>();
+            int schoolCount = schoolManager.schoolCount;
+            // if (schoolCount == 0)
+            // {
+            //     schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolSpawn>().Build();
+            //     schoolCount = schoolQuery.CalculateEntityCount();
+            //     schoolArray = schoolQuery.ToEntityArray(Allocator.Temp);
+            // }
             
 
             

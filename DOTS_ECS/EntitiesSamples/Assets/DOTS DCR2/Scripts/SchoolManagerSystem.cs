@@ -39,16 +39,16 @@ namespace DCR2
             Debug.Log(FixedString.Format("School count: {0}", manager.schoolCount));
 
             // print number of fish per school
-            foreach (var (schoolRecord, memberBuffer) in
-             SystemAPI.Query<RefRO<SchoolRecord>, DynamicBuffer<SchoolMemberElement>>())
-            {
-                Debug.Log(FixedString.Format("School {0} has {1} members", schoolRecord.ValueRO.schoolID, memberBuffer.Length));
+            // foreach (var (schoolRecord, memberBuffer) in
+            //  SystemAPI.Query<RefRO<SchoolRecord>, DynamicBuffer<SchoolMemberElement>>())
+            // {
+            //     Debug.Log(FixedString.Format("School {0} has {1} members", schoolRecord.ValueRO.schoolID, memberBuffer.Length));
 
-                for (int i = 0; i < memberBuffer.Length; i++)
-                {
-                    Debug.Log(FixedString.Format("  Member {0}: Entity {1}", i, memberBuffer[i].FishEntity.Index));
-                }
-            }
+            //     for (int i = 0; i < memberBuffer.Length; i++)
+            //     {
+            //         Debug.Log(FixedString.Format("  Member {0}: Entity {1}", i, memberBuffer[i].FishEntity.Index));
+            //     }
+            // }
         }
 
     }

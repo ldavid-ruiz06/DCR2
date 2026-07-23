@@ -128,6 +128,22 @@ namespace DCR2
                 //  Note: boidSchool has prefabs for the fish that it spawns, the prefabs are of boids type
                 state.EntityManager.Instantiate(school.ValueRO.schoolPrefab, schoolEntities);
 
+
+                // Stamp every spawned fish with the CURRENT school's ID, overwriting whatever
+                // schoolID was manually set on the prefab in the Inspector.
+                for (int i = 0; i < schoolEntities.Length; i++)
+                {
+                    // Read is safe mid-loop (read-only, not a structural change).
+                    var fishSchoolSettings = state.EntityManager.GetSharedComponentManaged<SemiStaticSchool>(schoolEntities[i]);
+
+                    // Only touch the ID - preserve every other baked value (weights, alpha, rho, etc.)
+                    fishSchoolSettings.schoolID = school.ValueRO.schoolID;
+
+                    // Structural change - must go through ecb since we're mid-iteration.
+                    ecb.SetSharedComponent(schoolEntities[i], fishSchoolSettings);
+                }
+
+
                 // Instantiate the SetBoidLocalToWorld job
                 //  This job moves the fish entities in boidEntities into random positions
                 var SetSchoolLocalToWorldJob = new SetSchoolLocalToWorld
@@ -184,13 +200,14 @@ namespace DCR2
                 }
 
                 //puts the Deletes the the entity command into a queue
-                ecb.DestroyEntity(entity);
+                //ecb.DestroyEntity(entity);
                 // instead of deleting it, just disable it
-                //ecb.AddComponent<Disabled>(entity);
+                ecb.AddComponent<Disabled>(entity);
             }
 
             //Deletes the entity ID's after the for loop is done
             ecb.Playback(state.EntityManager);
+            ecb.Dispose();
             
         }
     }
