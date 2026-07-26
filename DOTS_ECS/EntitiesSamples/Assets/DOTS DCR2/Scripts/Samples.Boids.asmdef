@@ -11,7 +11,8 @@
         "Unity.Burst",
         "Unity.Mathematics",
         "Unity.Mathematics.Extensions",
-        "Unity.Mathematics.Extensions.Hybrid"
+        "Unity.Mathematics.Extensions.Hybrid",
+        "Unity.Physics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -6,6 +6,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine.Profiling;
+using Unity.Physics;
 
 //These are used to enable test things like Debug.Log()
 using UnityEngine;
@@ -95,30 +96,30 @@ namespace DCR2
                     localToWorldLookup[centroidEntityArray[g]] = localToWorld;
                 }
 
+                // // drawing a raycast
+                // if (!SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physicsWorld)) return;
 
+                // // 2. Define the ray inputs
+                // float3 rayStart = new float3(0, 5, 0);
+                // float3 rayEnd = new float3(0, -5, 0);
 
-
-
-                // var getCentroidJob = new GetCentroid
+                // RaycastInput input = new RaycastInput
                 // {
-                    
+                //     Start = rayStart,
+                //     End = rayEnd,
+                //     Filter = CollisionFilter.Default
                 // };
-                //var getCentroidJobHandle = getCentroidJob.Schedule(calculateCentroidMeanJobHandle);
 
+                // // 3. Cast the ray
+                // if (physicsWorld.CastRay(input, out Unity.Physics.RaycastHit hit))
+                // {
+                //     // Draw a green line to the point of impact
+                //     Debug.DrawLine(input.Start, hit.Position, Color.green);
+                // }
+                
             }
         }
 
-
-        // job to get the new centroid after calculation of the mean
-        // [BurstCompile]
-        // partial struct GetCentroid : IJobEntity
-        // {
-            
-        //     void Execute ()
-        //     {
-                
-        //     }
-        // }
     }
 }
 
