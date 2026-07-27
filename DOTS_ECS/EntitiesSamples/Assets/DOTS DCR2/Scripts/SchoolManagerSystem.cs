@@ -5,6 +5,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
+using Unity.Rendering;
 
 namespace DCR2
 {
@@ -17,29 +18,32 @@ namespace DCR2
         public float strayDistance;
 
         [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            var world = state.WorldUnmanaged;
+        // public void OnCreate(ref SystemState state)
+        // {
+        //     var world = state.WorldUnmanaged;
 
-            // Create the one-and-only manager singleton entity.
-            var singleton = state.EntityManager.CreateEntity();
+        //     // Create the one-and-only manager singleton entity.
+        //     var singleton = state.EntityManager.CreateEntity();
 
-            // set up SchoolManagerSingleton component
-            state.EntityManager.AddComponentData(singleton, new SchoolManagerSingleton
-            {
-                schoolCount = 0,
-                nextSchoolID = 0
-            });
+        //     // set up SchoolManagerSingleton component
+        //     state.EntityManager.AddComponentData(singleton, new SchoolManagerSingleton
+        //     {
+        //         schoolCount = 0,
+        //         nextSchoolID = 0
+        //     });
             
-            strayDistance = 10f;
-            Debug.Log("Manager Created!");
-        }
+        //     strayDistance = 10f;
+        //     Debug.Log("Manager Created!");
+        // }
 
         public void OnUpdate(ref SystemState state)
         {
             // Log the current school count
             var manager = SystemAPI.GetSingleton<SchoolManagerSingleton>();
-            Debug.Log(FixedString.Format("School count: {0}", manager.schoolCount));
+            var managerEntity = SystemAPI.GetSingletonEntity<SchoolManagerSingleton>();
+            var managerRW = SystemAPI.GetComponentRW<SchoolManagerSingleton>(managerEntity);
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+            //Debug.Log(FixedString.Format("School count: {0}", manager.schoolCount));
             // print number of fish per school
             // foreach (var (schoolRecord, memberBuffer) in
             //  SystemAPI.Query<RefRO<SchoolRecord>, DynamicBuffer<SchoolMemberElement>>())
@@ -55,28 +59,23 @@ namespace DCR2
 
 
             // check for stray fish
-            var strayFish = new NativeList<Entity>(Allocator.Temp);
-            // get the localToWorld component of each fish and compare distance to the 
-            // centroid. if too far, mark it as stray
-            foreach (var (dynamicSchool, localToWorld, entity) in
-                     SystemAPI.Query<RefRO<DynamicSchool>, RefRO<LocalToWorld>>().WithEntityAccess())
+            strayDistance = 20.0f;
+            var straySplitRequestQueue = new NativeQueue<StraySplitRequest>(Allocator.TempJob); // we use a queue so we can easily add and remove elements
+            var detectStrayJob = new DetectStrayFishJob
             {
-                float distanceFromCentroid = math.distance(localToWorld.ValueRO.Position, dynamicSchool.ValueRO.centroid);
-                if (distanceFromCentroid > strayDistance)
-                {
-                    Debug.Log("Strayed too far");
-                    strayFish.Add(entity);
-                }
+                strayDistance = strayDistance,
+                strayRequestWriter = straySplitRequestQueue.AsParallelWriter(),
+            };
 
-            }
+            state.Dependency = detectStrayJob.ScheduleParallel(state.Dependency);
+            state.Dependency.Complete();
 
-            // if there are stray fish, separate from back and spawn centroid
-            if (strayFish.Length > 0)
+            // if theres fish in the queue, split into new school
+            while (straySplitRequestQueue.TryDequeue(out StraySplitRequest request))
             {
-                Debug.Log(FixedString.Format("Stray fish: {0}", strayFish.Length));
+                SplitFishIntoNewSchool(ref state, ecb, request, ref managerRW.ValueRW);
             }
-
-
+            straySplitRequestQueue.Dispose();
 
 
 
@@ -91,16 +90,76 @@ namespace DCR2
         partial struct DetectStrayFishJob: IJobEntity
         {
             [ReadOnly] public float strayDistance;
-            public NativeQueue<Entity>.ParallelWriter strayFishWriter;
-
+            public NativeQueue<StraySplitRequest>.ParallelWriter strayRequestWriter; // start as an empty queue
+            public SemiStaticSchool oldSchool;
             void Execute(Entity entity, in LocalToWorld localToWorld, in DynamicSchool dynamicSchool)
             {
+                // get distance from centroid
                 float distanceFromCentroid = math.distance(localToWorld.Position, dynamicSchool.centroid);
+                // if fish is too far, add to the queue
                 if (distanceFromCentroid > strayDistance)
                 {
-                    strayFishWriter.Enqueue(entity);
+                    strayRequestWriter.Enqueue(new StraySplitRequest
+                    {
+                        fishEntity = entity,
+                        fishPosition = localToWorld.Position,
+                        oldSchoolSettings = oldSchool // copy of the blittable shared-component value
+                    });
                 }
+
+            
+
             }
+        }
+
+        partial struct StraySplitRequest
+        {
+            public Entity fishEntity;
+            public float3 fishPosition;
+            public SemiStaticSchool oldSchoolSettings;
+        }
+
+        // function that separates the stray fish into their own school
+        // it cannot be turned into a job due that it spawns a centroidGizmo for
+        // each new school
+        private void SplitFishIntoNewSchool(ref SystemState state, EntityCommandBuffer ecb, StraySplitRequest request, ref SchoolManagerSingleton manager)
+        {
+            int newSchoolID = manager.nextSchoolID;
+            manager.nextSchoolID++;
+            manager.schoolCount++;
+
+            // Copy the settings captured by the job, just stamp in the new ID.
+            var newSchoolSettings = request.oldSchoolSettings;
+            newSchoolSettings.schoolID = newSchoolID;
+
+            ecb.SetSharedComponent(request.fishEntity, newSchoolSettings);
+            ecb.SetComponent(request.fishEntity, new DynamicSchool { centroid = request.fishPosition });
+
+            // Persistent school-data entity, same as before.
+            var newSchoolEntity = ecb.CreateEntity();
+            ecb.AddComponent(newSchoolEntity, new SchoolRecord
+            {
+                schoolID = newSchoolID,
+                centroid = request.fishPosition,
+                memberCount = 1
+            });
+            var buffer = ecb.AddBuffer<SchoolMemberElement>(newSchoolEntity);
+            buffer.Add(new SchoolMemberElement { FishEntity = request.fishEntity });
+
+            // NEW: spawn a centroid gizmo for this runtime-created school.
+            var newGizmoEntity = ecb.Instantiate(manager.centroidPrefab);
+            ecb.SetComponent(newGizmoEntity, new centroidGizmo
+            {
+                centroidPrefab = manager.centroidPrefab,
+                centroidID = newSchoolID
+            });
+            // Optional: give it a distinct color so it's visually clear it's a new/split-off school.
+            ecb.SetComponent(newGizmoEntity, new URPMaterialPropertyBaseColor
+            {
+                Value = new float4(1f, 0f, 0f, 1f) // e.g. red, to flag "runtime-created"
+            });
+
+            Debug.Log(FixedString.Format("Fish strayed - created new school {0}", newSchoolID));
         }
     }
 }

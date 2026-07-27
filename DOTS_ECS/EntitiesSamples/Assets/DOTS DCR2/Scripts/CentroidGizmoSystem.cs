@@ -100,8 +100,8 @@ namespace DCR2
                 // if (!SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physicsWorld)) return;
 
                 // // 2. Define the ray inputs
-                // float3 rayStart = new float3(0, 5, 0);
-                // float3 rayEnd = new float3(0, -5, 0);
+                // float3 rayStart = new float3(0, 50, 0);
+                // float3 rayEnd = new float3(0, -50, 0);
 
                 // RaycastInput input = new RaycastInput
                 // {
@@ -115,6 +115,7 @@ namespace DCR2
                 // {
                 //     // Draw a green line to the point of impact
                 //     Debug.DrawLine(input.Start, hit.Position, Color.green);
+                //     Debug.Log("Drawing raycast");
                 // }
                 
             }
