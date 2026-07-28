@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using Unity.Rendering;
+using UnityEngine.SocialPlatforms;
 
 namespace DCR2
 {
@@ -43,28 +44,19 @@ namespace DCR2
             var managerEntity = SystemAPI.GetSingletonEntity<SchoolManagerSingleton>();
             var managerRW = SystemAPI.GetComponentRW<SchoolManagerSingleton>(managerEntity);
             var ecb = new EntityCommandBuffer(Allocator.Temp);
-            //Debug.Log(FixedString.Format("School count: {0}", manager.schoolCount));
-            // print number of fish per school
-            // foreach (var (schoolRecord, memberBuffer) in
-            //  SystemAPI.Query<RefRO<SchoolRecord>, DynamicBuffer<SchoolMemberElement>>())
-            // {
-            //     Debug.Log(FixedString.Format("School {0} has {1} members", schoolRecord.ValueRO.schoolID, memberBuffer.Length));
-
-            //     for (int i = 0; i < memberBuffer.Length; i++)
-            //     {
-            //         Debug.Log(FixedString.Format("  Member {0}: Entity {1}", i, memberBuffer[i].FishEntity.Index));
-            //     }
-            // }
+            
 
 
 
             // check for stray fish
             strayDistance = 20.0f;
+            var schoolRecordLookup = SystemAPI.GetComponentLookup<SchoolRecord>(true);
             var straySplitRequestQueue = new NativeQueue<StraySplitRequest>(Allocator.TempJob); // we use a queue so we can easily add and remove elements
             var detectStrayJob = new DetectStrayFishJob
             {
                 strayDistance = strayDistance,
                 strayRequestWriter = straySplitRequestQueue.AsParallelWriter(),
+                schoolRecordLookup = schoolRecordLookup,
             };
 
             state.Dependency = detectStrayJob.ScheduleParallel(state.Dependency);
@@ -84,6 +76,8 @@ namespace DCR2
 
         
 
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
         }
 
         // jobs 
@@ -92,10 +86,22 @@ namespace DCR2
             [ReadOnly] public float strayDistance;
             public NativeQueue<StraySplitRequest>.ParallelWriter strayRequestWriter; // start as an empty queue
             public SemiStaticSchool oldSchool;
+            [ReadOnly] public ComponentLookup<SchoolRecord> schoolRecordLookup;
             void Execute(Entity entity, in LocalToWorld localToWorld, in DynamicSchool dynamicSchool)
             {
+                // get this
+                var schoolRecord = schoolRecordLookup[entity];
+                if (schoolRecord.memberCount <= 1)
+                {
+                    return;
+                }
+
+
                 // get distance from centroid
                 float distanceFromCentroid = math.distance(localToWorld.Position, dynamicSchool.centroid);
+                Debug.Log(FixedString.Format("Fish Position: ({0}, {1}, {2})", localToWorld.Position.x, localToWorld.Position.y, localToWorld.Position.z));
+                Debug.Log(FixedString.Format("Centroid Position: ({0}, {1}, {2})", dynamicSchool.centroid.x, dynamicSchool.centroid.y, dynamicSchool.centroid.z));
+                Debug.Log(FixedString.Format("Distance: {0}", distanceFromCentroid));
                 // if fish is too far, add to the queue
                 if (distanceFromCentroid > strayDistance)
                 {
@@ -146,20 +152,8 @@ namespace DCR2
             var buffer = ecb.AddBuffer<SchoolMemberElement>(newSchoolEntity);
             buffer.Add(new SchoolMemberElement { FishEntity = request.fishEntity });
 
-            // NEW: spawn a centroid gizmo for this runtime-created school.
-            var newGizmoEntity = ecb.Instantiate(manager.centroidPrefab);
-            ecb.SetComponent(newGizmoEntity, new centroidGizmo
-            {
-                centroidPrefab = manager.centroidPrefab,
-                centroidID = newSchoolID
-            });
-            // Optional: give it a distinct color so it's visually clear it's a new/split-off school.
-            ecb.SetComponent(newGizmoEntity, new URPMaterialPropertyBaseColor
-            {
-                Value = new float4(1f, 0f, 0f, 1f) // e.g. red, to flag "runtime-created"
-            });
-
             Debug.Log(FixedString.Format("Fish strayed - created new school {0}", newSchoolID));
+
         }
     }
 }

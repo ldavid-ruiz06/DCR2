@@ -182,8 +182,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ed1d4032a223d44d8b2fac950fc2df3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Samples.DCR2::DCR2.SchoolManagerAuthoring
-  centroidPrefab: {fileID: 4283189356725638952, guid: d060a894868b26947951105566ff0d01,
-    type: 3}
+  centroidPrefab: {fileID: 1808384570}
 --- !u!4 &1721863226
 Transform:
   m_ObjectHideFlags: 0
@@ -246,7 +245,7 @@ MonoBehaviour:
   schoolPrefab: {fileID: 4631480815441529564, guid: c89815d400bda4645851c78e0056c8c5,
     type: 3}
   spawnRadius: 1
-  spawnCount: 2
+  spawnCount: 5
   schoolID: 0
   schoolCentroid: {fileID: 1808384570}
   spawnType: 0
