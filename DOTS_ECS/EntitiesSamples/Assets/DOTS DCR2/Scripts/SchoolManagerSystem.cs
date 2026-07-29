@@ -89,12 +89,9 @@ namespace DCR2
             [ReadOnly] public ComponentLookup<SchoolRecord> schoolRecordLookup;
             void Execute(Entity entity, in LocalToWorld localToWorld, in DynamicSchool dynamicSchool)
             {
-                // get this
-                var schoolRecord = schoolRecordLookup[entity];
-                if (schoolRecord.memberCount <= 1)
-                {
-                    return;
-                }
+                // get SchoolRecord of the fish's school
+                
+                
 
 
                 // get distance from centroid
