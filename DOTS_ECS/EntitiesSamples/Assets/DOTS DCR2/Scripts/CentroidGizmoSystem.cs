@@ -31,7 +31,7 @@ namespace DCR2
             {
                 // get query of gizmo to have each centroidID
                 var gizmoQuery = SystemAPI.QueryBuilder().WithAll<centroidGizmo>().Build();
-                Debug.Log(FixedString.Format("{0}", gizmoQuery.CalculateEntityCount()));
+                Debug.Log(FixedString.Format("Gizmo count: {0}", gizmoQuery.CalculateEntityCount()));
                 
                 
 
@@ -94,9 +94,13 @@ namespace DCR2
                                // Value = float4x4.TRS(centroidVal, quaternion.LookRotationSafe(new float3(0f,0f,0f), math.up()), new float3(10.0f, 10.0f, 10.0f))
                             };
                     localToWorldLookup[centroidEntityArray[g]] = localToWorld;
+
+
+                    
+
                 }
 
-                // // drawing a raycast
+                // // // drawing a raycast
                 // if (!SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out var physicsWorld)) return;
 
                 // // 2. Define the ray inputs
@@ -117,6 +121,17 @@ namespace DCR2
                 //     Debug.DrawLine(input.Start, hit.Position, Color.green);
                 //     Debug.Log("Drawing raycast");
                 // }
+
+                // // Enforce safe thread-execution via entities.ForEach or IJobEntity
+                // SystemAPI.Query<RefRO<LocalTransform>>()
+                // .ForEach((in LocalTransform transform) =>
+                // {
+                //     float3 start = transform.Position;
+                //     float3 end = transform.Position + (transform.Forward() * 2.0f);
+                    
+                //     // Works perfectly inside Burst jobs!
+                //     Debug.DrawLine(start, end, Color.green); 
+                // });
                 
             }
         }

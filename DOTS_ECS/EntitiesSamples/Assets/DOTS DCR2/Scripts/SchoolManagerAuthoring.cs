@@ -11,7 +11,7 @@ namespace DCR2
     {
         
 
-        public GameObject centroidPrefab;
+        public GameObject schoolCentroid;
 
         class Baker : Baker<SchoolManagerAuthoring>
         {
@@ -22,7 +22,7 @@ namespace DCR2
                 {
                     schoolCount = 0,
                     nextSchoolID = 0,
-                    centroidPrefab = GetEntity(authoring.centroidPrefab, TransformUsageFlags.Dynamic)
+                    schoolCentroid = GetEntity(authoring.schoolCentroid, TransformUsageFlags.Dynamic)
                 });
             }
         }
@@ -33,8 +33,9 @@ namespace DCR2
         public int schoolCount;   // how many schools currently exist
         public int nextSchoolID;  // next free ID to hand out (always increases, never reused,
                                 // so merged/removed IDs don't collide with new ones)
-        public Entity centroidPrefab;
+        public Entity schoolCentroid;
     }
+    
 
     // Lives on ONE entity PER SCHOOL
     public struct SchoolRecord : IComponentData

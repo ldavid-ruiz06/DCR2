@@ -183,16 +183,34 @@ namespace DCR2
                     newCentroid = newCentroid,
                     schoolID = schoolID,
                 };
+
                 var assignCentroidJobHandle = assignCentroidJob.ScheduleParallel(fishQuery, centroidsBarrierJobHandle);
+                
+                // var drawDebugLineJob = new DrawDebugLineJob
+                // {
+                //     newCentroid = newCentroid,
+                //     schoolID = schoolID,
+                // };
+                // var drawDebugLineJobHandle = drawDebugLineJob.ScheduleParallel(assignCentroidJob);
 
                 var assignCentroidFinalDirectionBarrierJobHandle = JobHandle.CombineDependencies(assignCentroidJobHandle, assignFinalDirectionJobHandle);
 
                 state.Dependency = assignCentroidFinalDirectionBarrierJobHandle;
 
                 
-                // foreach(var x in newCentroid)
+
+                
+                // // draw debug lines from fish to their centroid
+                // var fishArray = fishQuery.ToEntityArray(Allocator.TempJob);
+                // foreach(var fish in fishArray)
                 // {
-                //     Debug.Log(FixedString.Format("Centroid: ({0})", x.ToString()));
+                //     var dynamicSchool = state.EntityManager.GetSharedComponentManaged<SemiStaticSchool>(fish);
+                //     int fishID = dynamicSchool.schoolID;
+                //     if (fishID == schoolID)
+                //     {
+                //         var localToWorld = state.EntityManager.GetComponentData<LocalToWorld>(fish);
+                //         drawDebugLine(localToWorld.Position, schoolID, newCentroid);
+                //     }
                 // }
 
                 fishQuery.AddDependency(state.Dependency);
@@ -547,6 +565,14 @@ namespace DCR2
                 //Debug.Log(FixedString.Format("Centroid: ({0}, {1}, {2})", dynamicSchool.centroid.x, dynamicSchool.centroid.y, dynamicSchool.centroid.z));
             }
         }
+
+        // Draw debug line from fish's position to its centroid
+        // void drawDebugLine(float3 position, int schoolID, NativeArray<float3> newCentroid)
+        // {
+        //     float3 start = position;
+        //     float3 end = newCentroid[schoolID];
+        //     Debug.DrawLine(start, end, Color.green);
+        // }
 
         struct CouzinValues
         {
