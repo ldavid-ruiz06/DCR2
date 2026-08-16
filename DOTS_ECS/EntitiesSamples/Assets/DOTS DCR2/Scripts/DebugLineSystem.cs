@@ -20,8 +20,8 @@ namespace DCR2
         {
             var fishQuery = SystemAPI.QueryBuilder().WithAll<DynamicSchool>().WithAll<SemiStaticSchool>().WithAll<Fish>().Build();
             var fishArray = fishQuery.ToEntityArray(Allocator.TempJob);
-            Debug.Log(FixedString.Format("Debug Line Fish Count: {0}", fishQuery.CalculateEntityCount()));
-            int i = 0;
+            //Debug.Log(FixedString.Format("Debug Line Fish Count: {0}", fishQuery.CalculateEntityCount()));
+            // int i = 0;
 
             foreach (var fish in fishArray)
             {
@@ -29,8 +29,8 @@ namespace DCR2
                 var centroidData = SystemAPI.GetComponent<DynamicSchool>(fish);
 
                 Debug.DrawLine(transform.Position, centroidData.centroid);
-                Debug.Log(FixedString.Format("Debug I: {0}", i));
-                i++;
+                // Debug.Log(FixedString.Format("Debug I: {0}", i));
+                // i++;
             }
         }
     }

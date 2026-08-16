@@ -43,6 +43,7 @@ namespace DCR2
         public int schoolID;
         public float3 centroid;   // last known centroid (mirrors DynamicSchool.centroid on members)
         public int memberCount;   // cached length of the buffer below, kept in sync manually
+        
     }
 
     // Buffer attached to the SAME entity as SchoolRecord.

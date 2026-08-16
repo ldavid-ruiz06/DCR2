@@ -12,36 +12,34 @@ namespace DCR2
 {
     // gets attribute from SchoolSpawner to have "static" access to it at all time
     [RequireMatchingQueriesForUpdate]
+    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateAfter(typeof(FishSystem))] // needs up-to-date centroids/positions from this frame
     [UpdateAfter(typeof(CentroidGizmoSystem))] 
     public partial struct SchoolManagerSystem : ISystem
     {
 
         public float strayDistance;
+        public float mergeDistance;
         public bool splitting;
 
         //[BurstCompile]
 
         public void OnUpdate(ref SystemState state)
         {
+            // make sure singleton exists before running anything
+            if (!SystemAPI.HasSingleton<SchoolManagerSingleton>()) return;
+
             // Managers and EntityCommandBuffer
             var manager = SystemAPI.GetSingleton<SchoolManagerSingleton>();
             var managerEntity = SystemAPI.GetSingletonEntity<SchoolManagerSingleton>();
             var managerRW = SystemAPI.GetComponentRW<SchoolManagerSingleton>(managerEntity);
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             
-            // hashmap that has schoolID -> current fish count map
-            // used to avoid empty schools because all the fish left
-            var schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolRecord>().Build();
-            int schooulCountNow = schoolQuery.CalculateEntityCount();
-            var schoolMemberCounts = new NativeHashMap<int, int>(math.max(schooulCountNow, 1), Allocator.TempJob);
-            foreach (var (schoolRecord, memberBuffer) in
-                     SystemAPI.Query<RefRO<SchoolRecord>, DynamicBuffer<SchoolMemberElement>>())
-            {
-                schoolMemberCounts.TryAdd(schoolRecord.ValueRO.schoolID, memberBuffer.Length);
-            }
-
-
+            // set count of school and next free id
+            manager.schoolCount = SystemAPI.QueryBuilder().WithAll<SchoolRecord>().Build().CalculateEntityCount();
+            manager.nextSchoolID = manager.schoolCount;
+            
+    
             // check for stray fish
             strayDistance = 20.0f;
             splitting = false;
@@ -50,13 +48,11 @@ namespace DCR2
             {
                 strayDistance = strayDistance,
                 strayRequestWriter = straySplitRequestQueue.AsParallelWriter(),
-                schoolMemberCounts = schoolMemberCounts,
                 splitting = splitting,
             };
 
             state.Dependency = detectStrayJob.ScheduleParallel(state.Dependency);
             state.Dependency.Complete();
-            schoolMemberCounts.Dispose();
 
             // if theres fish in the queue, split into new school
             while (straySplitRequestQueue.TryDequeue(out StraySplitRequest request))
@@ -65,12 +61,109 @@ namespace DCR2
             }
             straySplitRequestQueue.Dispose();
 
+            
 
 
 
+            // merging schools
+            mergeDistance = 15.0f; // max distance between centroids for merging
+            var schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolRecord>().Build();
+            var schoolEntities = schoolQuery.ToEntityArray(Allocator.Temp);
+            var schoolRecords = schoolQuery.ToComponentDataArray<SchoolRecord>(Allocator.Temp);
+            var dynamicSchoolQuery = SystemAPI.QueryBuilder().WithAll<DynamicSchool>().Build(); // get all centroids
+            //Debug.Log(FixedString.Format("Dynamic School Record: {0}", dynamicSchoolQuery.CalculateEntityCount()));
+            var dynamicSchoolEntities = dynamicSchoolQuery.ToEntityArray(Allocator.Temp);
+            var dynamicRecord = dynamicSchoolQuery.ToComponentDataArray<DynamicSchool>(Allocator.Temp);
 
 
-        
+            var alreadyMerged = new NativeHashSet<Entity>(schoolEntities.Length, Allocator.Temp);
+
+            
+
+            for (int i = 0; i < schoolEntities.Length; i++)
+            {
+                // update schoolRecord.centroid to the actual centroid 
+                foreach (var (schoolRecord, memberBuffer) in
+                             SystemAPI.Query<RefRW<SchoolRecord>, DynamicBuffer<SchoolMemberElement>>())
+                {
+                    if (memberBuffer.Length == 0) 
+                    {
+                        continue; // handled separately by the empty-school cleanup
+                    }
+                    Entity anyFish = memberBuffer[0].FishEntity;
+                    if (!state.EntityManager.Exists(anyFish))
+                    {
+                        continue; // safety guard
+                    } 
+
+                    var dynamicSchool = state.EntityManager.GetComponentData<DynamicSchool>(anyFish);
+                    schoolRecord.ValueRW.centroid = dynamicSchool.centroid;
+                }
+                //Debug.Log(FixedString.Format("Centroid value: {0}", schoolRecords[i].centroid.x));
+
+
+                // see if school is already merged during this frame
+                if (alreadyMerged.Contains(schoolEntities[i])) continue;
+
+                // compare with other centroids
+                for (int j = i + 1; j < schoolEntities.Length; j++)
+                {
+                    // see if school is already merged with other school
+                    if (alreadyMerged.Contains(schoolEntities[j])) continue;
+                    //if (schoolRecords[i].modificationTimer > 0f) continue;
+
+                    // calculate distance between centroids
+                    float distance = math.distance(dynamicRecord[i].centroid, dynamicRecord[j].centroid);
+                    Debug.Log(FixedString.Format("Distance: {0}", distance));
+                    if (distance > mergeDistance) continue;
+
+
+                    // from this point onward, it is assumed schools are close enough to merge
+                    Debug.Log(FixedString.Format("School {0} and {1} are merging.", i, j));
+
+                    // get school's I settings
+                    var keepBuffer = state.EntityManager.GetBuffer<SchoolMemberElement>(schoolEntities[i]);
+                    if (keepBuffer.Length == 0) continue; // safety guard
+                    Debug.Log(FixedString.Format("School {0}'s length: {1}", i, keepBuffer.Length));
+                    Entity templateFish = keepBuffer[0].FishEntity;
+                    var keepSettings = state.EntityManager.GetSharedComponentManaged<SemiStaticSchool>(templateFish);
+
+                    // reassign school J members to school I
+                    var removeBuffer = state.EntityManager.GetBuffer<SchoolMemberElement>(schoolEntities[j]);
+                    Debug.Log(FixedString.Format("School {0}'s length: {1}", j, removeBuffer.Length));
+                    var mergedBuffer = ecb.SetBuffer<SchoolMemberElement>(schoolEntities[i]);
+
+                    for (int f = 0; f < keepBuffer.Length; f++)
+                        mergedBuffer.Add(keepBuffer[f]);
+
+                    for (int f = 0; f < removeBuffer.Length; f++)
+                    {
+                        Entity fish = removeBuffer[f].FishEntity;
+                        ecb.SetSharedComponent(fish, keepSettings);
+                        mergedBuffer.Add(removeBuffer[f]);
+                    }
+
+                    // update school I record
+                    ecb.SetComponent(schoolEntities[i], new SchoolRecord
+                    {
+                        schoolID = schoolRecords[i].schoolID,
+                        centroid = (schoolRecords[i].centroid + schoolRecords[j].centroid) * 0.5f,
+                        memberCount = keepBuffer.Length + removeBuffer.Length,
+                    });
+
+                    // destroy absorbed school record
+                    ecb.DestroyEntity(schoolEntities[j]);
+
+                    manager.schoolCount--;
+
+                    // add merged school J to the set
+                    alreadyMerged.Add(schoolEntities[j]);
+                    Debug.Log("Schools successfully merged!");
+                    Debug.Log(FixedString.Format("New amount of schools: {0}", manager.schoolCount));
+                }
+
+                
+            }
 
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -82,7 +175,6 @@ namespace DCR2
             [ReadOnly] public float strayDistance;
             public NativeQueue<StraySplitRequest>.ParallelWriter strayRequestWriter; // start as an empty queue
             public SemiStaticSchool oldSchool;
-            [ReadOnly] public NativeHashMap<int, int> schoolMemberCounts; // schoolID -> current fish
             public bool splitting;
             
             
@@ -122,6 +214,7 @@ namespace DCR2
             public Entity fishEntity;
             public float3 fishPosition;
             public SemiStaticSchool oldSchoolSettings;
+            
         }
 
         // function that separates the stray fish into their own school
@@ -146,10 +239,14 @@ namespace DCR2
             {
                 schoolID = newSchoolID,
                 centroid = request.fishPosition,
-                memberCount = 1
+                memberCount = 1,
             });
             var buffer = ecb.AddBuffer<SchoolMemberElement>(newSchoolEntity);
             buffer.Add(new SchoolMemberElement { FishEntity = request.fishEntity });
+            ecb.SetComponent(request.fishEntity, new DynamicSchool
+            {
+                centroid = request.fishPosition,
+            });
 
             Debug.Log(FixedString.Format("Fish strayed - created new school {0}", newSchoolID));
 

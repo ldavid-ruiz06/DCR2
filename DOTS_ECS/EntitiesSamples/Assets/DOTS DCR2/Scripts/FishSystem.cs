@@ -19,6 +19,7 @@ using UnityEngine;
 namespace DCR2
 {
     [RequireMatchingQueriesForUpdate]
+    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(TransformSystemGroup))]
 
@@ -49,12 +50,7 @@ namespace DCR2
             // creating query of schools to use for array of centroids
             var schoolManager = SystemAPI.GetSingleton<SchoolManagerSingleton>();
             int schoolCount = schoolManager.schoolCount;
-            // if (schoolCount == 0)
-            // {
-            //     schoolQuery = SystemAPI.QueryBuilder().WithAll<SchoolSpawn>().Build();
-            //     schoolCount = schoolQuery.CalculateEntityCount();
-            //     schoolArray = schoolQuery.ToEntityArray(Allocator.Temp);
-            // }
+            //Debug.Log(FixedString.Format("schoolCount: {0}", schoolCount));
             
 
             

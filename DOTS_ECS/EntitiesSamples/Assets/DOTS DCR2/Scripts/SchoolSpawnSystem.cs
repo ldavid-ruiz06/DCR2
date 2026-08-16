@@ -18,6 +18,7 @@ namespace DCR2
     // RequireMatcingQueriesForUpdates :: Skips the OnUpdate system if there are no entities found in the EntityQueries that you do
     //  Basically, this doens't run OnUpdate until there are entities that match the quesries done in this system (Until we've defined our entity spawner)
     [RequireMatchingQueriesForUpdate]
+    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [BurstCompile]
     public partial struct SchoolSpawnSystem : ISystem
     {
@@ -181,7 +182,7 @@ namespace DCR2
                 {
                     schoolID = schoolID,
                     centroid = schoolLocalToWorld.ValueRO.Position, // initial guess; FishSystem will correct it next frame
-                    memberCount = school.ValueRO.spawnCount
+                    memberCount = school.ValueRO.spawnCount,
                 });
 
                 // Fill its member buffer with every fish we just spawned
