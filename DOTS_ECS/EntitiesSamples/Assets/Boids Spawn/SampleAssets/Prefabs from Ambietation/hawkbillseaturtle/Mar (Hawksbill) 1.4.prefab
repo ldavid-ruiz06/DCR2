@@ -1079,10 +1079,10 @@ MonoBehaviour:
   rotationSpeed: 1
   couzinDirectionWeight: 1
   centroidFollowingDirectionWeight: 10
-  minCentroidDistance: 1
-  maxCentroidDistance: 20
-  alpha: 10
-  rho: 30
+  minCentroidDistance: 5
+  maxCentroidDistance: 30
+  alpha: 5
+  rho: 40
 --- !u!54 &266143426251478063
 Rigidbody:
   m_ObjectHideFlags: 0

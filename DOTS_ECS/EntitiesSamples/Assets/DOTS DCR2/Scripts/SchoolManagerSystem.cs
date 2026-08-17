@@ -113,24 +113,27 @@ namespace DCR2
                     //if (schoolRecords[i].modificationTimer > 0f) continue;
 
                     // calculate distance between centroids
-                    float distance = math.distance(dynamicRecord[i].centroid, dynamicRecord[j].centroid);
-                    Debug.Log(FixedString.Format("Distance: {0}", distance));
+                    float distance = math.distance(schoolRecords[i].centroid, schoolRecords[j].centroid);
+                    // Debug.Log(FixedString.Format("Centroid 1: ({0}, {1}, {2})", schoolRecords[i].centroid.x, dynamicRecord[i].centroid.y, dynamicRecord[i].centroid.z));
+                    // Debug.Log(FixedString.Format("Centroid 2: ({0}, {1}, {2})", schoolRecords[j].centroid.x, dynamicRecord[j].centroid.y, dynamicRecord[j].centroid.z));
+                    
+                    // Debug.Log(FixedString.Format("Distance: {0}", distance));
                     if (distance > mergeDistance) continue;
 
 
                     // from this point onward, it is assumed schools are close enough to merge
-                    Debug.Log(FixedString.Format("School {0} and {1} are merging.", i, j));
+                    // Debug.Log(FixedString.Format("School {0} and {1} are merging.", i, j));
 
                     // get school's I settings
                     var keepBuffer = state.EntityManager.GetBuffer<SchoolMemberElement>(schoolEntities[i]);
                     if (keepBuffer.Length == 0) continue; // safety guard
-                    Debug.Log(FixedString.Format("School {0}'s length: {1}", i, keepBuffer.Length));
+                    // Debug.Log(FixedString.Format("School {0}'s length: {1}", i, keepBuffer.Length));
                     Entity templateFish = keepBuffer[0].FishEntity;
                     var keepSettings = state.EntityManager.GetSharedComponentManaged<SemiStaticSchool>(templateFish);
 
                     // reassign school J members to school I
                     var removeBuffer = state.EntityManager.GetBuffer<SchoolMemberElement>(schoolEntities[j]);
-                    Debug.Log(FixedString.Format("School {0}'s length: {1}", j, removeBuffer.Length));
+                    // Debug.Log(FixedString.Format("School {0}'s length: {1}", j, removeBuffer.Length));
                     var mergedBuffer = ecb.SetBuffer<SchoolMemberElement>(schoolEntities[i]);
 
                     for (int f = 0; f < keepBuffer.Length; f++)
@@ -158,13 +161,13 @@ namespace DCR2
 
                     // add merged school J to the set
                     alreadyMerged.Add(schoolEntities[j]);
-                    Debug.Log("Schools successfully merged!");
-                    Debug.Log(FixedString.Format("New amount of schools: {0}", manager.schoolCount));
+                    // Debug.Log("Schools successfully merged!");
                 }
 
                 
             }
 
+            Debug.Log(FixedString.Format("Amount of schools: {0}", manager.schoolCount));
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
@@ -200,7 +203,7 @@ namespace DCR2
                     {
                         fishEntity = entity,
                         fishPosition = localToWorld.Position,
-                        oldSchoolSettings = oldSchool // copy of the blittable shared-component value
+                        oldSchoolSettings = oldSchool, // copy of the blittable shared-component value
                     });
                 }
 
@@ -225,6 +228,13 @@ namespace DCR2
             int newSchoolID = manager.nextSchoolID;
             manager.nextSchoolID++;
             manager.schoolCount++;
+            
+            
+            // // subtract from previous SchoolRecord count member
+            // var oldSchoolRecord = SystemAPI.GetComponent<SchoolRecord>(GetSchoolRecordEntity(ref state, request.fishEntity));
+            // oldSchoolRecord.memberCount--;
+
+
 
             // Copy the settings captured by the job, just stamp in the new ID.
             var newSchoolSettings = request.oldSchoolSettings;
@@ -243,17 +253,38 @@ namespace DCR2
             });
             var buffer = ecb.AddBuffer<SchoolMemberElement>(newSchoolEntity);
             buffer.Add(new SchoolMemberElement { FishEntity = request.fishEntity });
+
+            // set dynamic centroid to fish position
             ecb.SetComponent(request.fishEntity, new DynamicSchool
             {
                 centroid = request.fishPosition,
             });
 
-            Debug.Log(FixedString.Format("Fish strayed - created new school {0}", newSchoolID));
-
-
-
+            // Debug.Log(FixedString.Format("Fish strayed - created new school {0}", newSchoolID));
             
 
+        }
+
+        // returns the school's SchoolRecord Component given a fishEntity
+        // AKA fish -> SchoolRecordComponent of fish's school
+        private Entity GetSchoolRecordEntity(ref SystemState state, Entity fishEntity)
+        {
+            // Read this fish's current schoolID off its shared component.
+            var fishSchoolSettings = state.EntityManager.GetSharedComponentManaged<SemiStaticSchool>(fishEntity);
+            int schoolID = fishSchoolSettings.schoolID;
+
+            // Search all SchoolRecord entities for the one with a matching schoolID.
+            // O(n) search
+            foreach (var (schoolRecord, schoolEntity) in
+                    SystemAPI.Query<RefRO<SchoolRecord>>().WithEntityAccess())
+            {
+                if (schoolRecord.ValueRO.schoolID == schoolID)
+                {
+                    return schoolEntity;
+                }
+            }
+
+            return Entity.Null; // no matching SchoolRecord found
         }
     }
 }

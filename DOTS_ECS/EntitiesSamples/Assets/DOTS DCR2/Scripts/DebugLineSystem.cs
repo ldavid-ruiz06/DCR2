@@ -12,6 +12,7 @@ namespace DCR2
     [RequireMatchingQueriesForUpdate]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateAfter(typeof(FishSystem))] // needs up-to-date centroids/positions from this frame
+    [UpdateAfter(typeof(SchoolManagerSystem))]
     public partial struct DebugLineSystem : ISystem
     {
         [BurstCompile]
