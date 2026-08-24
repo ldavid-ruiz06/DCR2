@@ -333,7 +333,7 @@ Transform:
   m_GameObject: {fileID: 897412789}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.99, y: 0, z: 6.57}
+  m_LocalPosition: {x: -14, y: 0, z: -136.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -433,7 +433,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   schoolPrefab: {fileID: 4631480815441529564, guid: c89815d400bda4645851c78e0056c8c5,
     type: 3}
-  spawnRadius: 1
+  spawnRadius: 10
   spawnCount: 50
   schoolID: 0
   schoolCentroid: {fileID: 1808384570}

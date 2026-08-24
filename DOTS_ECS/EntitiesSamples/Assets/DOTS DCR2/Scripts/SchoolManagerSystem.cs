@@ -39,6 +39,9 @@ namespace DCR2
             manager.schoolCount = SystemAPI.QueryBuilder().WithAll<SchoolRecord>().Build().CalculateEntityCount();
             manager.nextSchoolID = manager.schoolCount;
             
+
+            // set to ensure that two schools arent splitting and merging in the same frame
+            //var modifiedSchools = new NativeHashSet<Entity>(schoolEntities.Length, Allocator.Temp);
     
             // check for stray fish
             strayDistance = 20.0f;
